@@ -9,20 +9,15 @@ Website:     https://wakatime.com/
 package com.wakatime.intellij.plugin;
 
 import com.intellij.AppTopics;
-import com.intellij.ide.plugins.PluginManager;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
-import com.intellij.openapi.compiler.CompilationStatusListener;
-import com.intellij.openapi.compiler.CompileContext;
-import com.intellij.openapi.compiler.CompilerTopics;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
@@ -66,7 +61,8 @@ public class WakaTime implements ApplicationComponent {
     }
 
     public void initComponent() {
-        VERSION = PluginManager.getPlugin(PluginId.getId("com.wakatime.intellij.plugin")).getVersion();
+        VERSION = "0.0.1";
+//        VERSION = PluginManager.getPlugin(PluginId.getId("com.wakatime.intellij.plugin")).getVersion();
         log.info("Initializing WakaTime plugin v" + VERSION + " (https://wakatime.com/)");
         //System.out.println("Initializing WakaTime plugin v" + VERSION + " (https://wakatime.com/)");
 
@@ -169,11 +165,23 @@ public class WakaTime implements ApplicationComponent {
                 MessageBus bus = ApplicationManager.getApplication().getMessageBus();
                 connection = bus.connect();
                 connection.subscribe(AppTopics.FILE_DOCUMENT_SYNC, new CustomSaveListener());
-                connection.subscribe(CompilerTopics.COMPILATION_STATUS, new CompilationStatusListener() {
-                    @Override
-                    public void compilationFinished(boolean aborted, int errors, int warnings, @NotNull CompileContext compileContext) {
-                    }
-                });
+//                connection.subscribe(CompilerTopics.COMPILATION_STATUS, new CompilationStatusListener() {
+//                    @Override
+//                    public void compilationFinished(boolean aborted, int errors, int warnings, @NotNull CompileContext compileContext) {
+//                        compileContext.getProject();
+//                        System.out.println(compileContext);
+//                    }
+//
+//                    @Override
+//                    public void automakeCompilationFinished(int errors, int warnings, @NotNull CompileContext compileContext) {
+//                        System.out.println(compileContext);
+//                    }
+//
+//                    @Override
+//                    public void fileGenerated(@NotNull String outputRoot, @NotNull String relativePath) {
+//                        System.out.println(outputRoot);
+//                    }
+//                });
 
                 // edit document
                 EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new CustomDocumentListener());

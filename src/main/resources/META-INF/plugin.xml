@@ -18,7 +18,15 @@
         <!-- Add your extensions here -->
     </extensions>
 
+    <application-components>
+        <!-- Add your application components here -->
+        <component>
+            <implementation-class>com.wakatime.intellij.plugin.WakaTime</implementation-class>
+        </component>
+    </application-components>
+
     <actions>
         <!-- Add your actions here -->
+        <action id="pluginMenu" class="com.wakatime.intellij.plugin.PluginMenu" text="WakaTime"/>
     </actions>
 </idea-plugin>
