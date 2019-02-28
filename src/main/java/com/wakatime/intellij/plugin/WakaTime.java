@@ -14,6 +14,9 @@ import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.compiler.CompilationStatusListener;
+import com.intellij.openapi.compiler.CompileContext;
+import com.intellij.openapi.compiler.CompilerTopics;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
@@ -107,8 +110,8 @@ public class WakaTime implements ApplicationComponent {
                         log.info("Finished initializing WakaTime plugin");
 
                     } else {
-                        ApplicationManager.getApplication().invokeLater(new Runnable(){
-                            public void run(){
+                        ApplicationManager.getApplication().invokeLater(new Runnable() {
+                            public void run() {
                                 Messages.showErrorDialog("WakaTime requires Python to be installed.\nYou can install it from https://www.python.org/downloads/\nAfter installing Python, restart your IDE.", "Error");
                             }
                         });
@@ -141,13 +144,14 @@ public class WakaTime implements ApplicationComponent {
     }
 
     private void checkApiKey() {
-        ApplicationManager.getApplication().invokeLater(new Runnable(){
+        ApplicationManager.getApplication().invokeLater(new Runnable() {
             public void run() {
                 // prompt for apiKey if it does not already exist
                 Project project = null;
                 try {
                     project = ProjectManager.getInstance().getDefaultProject();
-                } catch (Exception e) { }
+                } catch (Exception e) {
+                }
                 ApiKey apiKey = new ApiKey(project);
                 if (apiKey.getApiKey().equals("")) {
                     apiKey.promptForApiKey();
@@ -158,13 +162,18 @@ public class WakaTime implements ApplicationComponent {
     }
 
     private void setupEventListeners() {
-        ApplicationManager.getApplication().invokeLater(new Runnable(){
+        ApplicationManager.getApplication().invokeLater(new Runnable() {
             public void run() {
 
                 // save file
                 MessageBus bus = ApplicationManager.getApplication().getMessageBus();
                 connection = bus.connect();
                 connection.subscribe(AppTopics.FILE_DOCUMENT_SYNC, new CustomSaveListener());
+                connection.subscribe(CompilerTopics.COMPILATION_STATUS, new CompilationStatusListener() {
+                    @Override
+                    public void compilationFinished(boolean aborted, int errors, int warnings, @NotNull CompileContext compileContext) {
+                    }
+                });
 
                 // edit document
                 EditorFactory.getInstance().getEventMulticaster().addDocumentListener(new CustomDocumentListener());
@@ -189,7 +198,7 @@ public class WakaTime implements ApplicationComponent {
     }
 
     private void setupMenuItem() {
-        ApplicationManager.getApplication().invokeLater(new Runnable(){
+        ApplicationManager.getApplication().invokeLater(new Runnable() {
             public void run() {
                 ActionManager am = ActionManager.getInstance();
                 PluginMenu action = new PluginMenu();
@@ -207,17 +216,20 @@ public class WakaTime implements ApplicationComponent {
         if (WakaTime.DEBUG) {
             try {
                 Messages.showWarningDialog("Running WakaTime in DEBUG mode. Your IDE may be slow when saving or editing files.", "Debug");
-            } catch (NullPointerException e) { }
+            } catch (NullPointerException e) {
+            }
         }
     }
 
     public void disposeComponent() {
         try {
             connection.disconnect();
-        } catch(Exception e) { }
+        } catch (Exception e) {
+        }
         try {
             scheduledFixture.cancel(true);
-        } catch (Exception e) { }
+        } catch (Exception e) {
+        }
 
         // make sure to send all heartbeats before exiting
         processHeartbeatQueue();
@@ -351,17 +363,31 @@ public class WakaTime implements ApplicationComponent {
         final int len = s.length();
         for (int i = 0; i < len; i++) {
             char c = s.charAt(i);
-            switch(c) {
-                case '\\': escaped.append("\\\\"); break;
-                case '"': escaped.append("\\\""); break;
-                case '\b': escaped.append("\\b"); break;
-                case '\f': escaped.append("\\f"); break;
-                case '\n': escaped.append("\\n"); break;
-                case '\r': escaped.append("\\r"); break;
-                case '\t': escaped.append("\\t"); break;
+            switch (c) {
+                case '\\':
+                    escaped.append("\\\\");
+                    break;
+                case '"':
+                    escaped.append("\\\"");
+                    break;
+                case '\b':
+                    escaped.append("\\b");
+                    break;
+                case '\f':
+                    escaped.append("\\f");
+                    break;
+                case '\n':
+                    escaped.append("\\n");
+                    break;
+                case '\r':
+                    escaped.append("\\r");
+                    break;
+                case '\t':
+                    escaped.append("\\t");
+                    break;
                 default:
                     boolean isUnicode = (c >= '\u0000' && c <= '\u001F') || (c >= '\u007F' && c <= '\u009F') || (c >= '\u2000' && c <= '\u20FF');
-                    if (isUnicode){
+                    if (isUnicode) {
                         escaped.append("\\u");
                         String hex = Integer.toHexString(c);
                         for (int k = 0; k < 4 - hex.length(); k++) {
@@ -395,7 +421,7 @@ public class WakaTime implements ApplicationComponent {
             cmds.add(heartbeat.language);
         }
         cmds.add("--plugin");
-        cmds.add(IDE_NAME+"/"+IDE_VERSION+" "+IDE_NAME+"-wakatime/"+VERSION);
+        cmds.add(IDE_NAME + "/" + IDE_VERSION + " " + IDE_NAME + "-wakatime/" + VERSION);
         if (heartbeat.isWrite)
             cmds.add("--write");
         if (extraHeartbeats.size() > 0)
