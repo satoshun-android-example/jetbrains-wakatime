@@ -1,18 +1,20 @@
 <idea-plugin>
-    <id>test.test</id>
-    <name>Plugin display name here</name>
-    <vendor email="support@yourcompany.com" url="http://www.yourcompany.com">YourCompany</vendor>
+    <id>com.github.satoshun.example.wakatime</id>
+    <name>SatoShun Wakatime testing</name>
+    <vendor email="shun.sato1@gmail.com" url="https://satoshun.github.io">satoshun</vendor>
 
     <description><![CDATA[
-    Enter short description for your plugin here.<br>
-    <em>most HTML tags may be used</em>
+      Metrics, insights, and time tracking automatically generated from your programming activity.<br />
+      <br />
+      <b>Installation</b><br />
+      <br />
     ]]></description>
 
     <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
          on how to target different products -->
-    <!-- uncomment to enable plugin in all products
     <depends>com.intellij.modules.lang</depends>
-    -->
+
+    <idea-version since-build="123"/>
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- Add your extensions here -->

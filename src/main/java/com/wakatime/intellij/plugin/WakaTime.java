@@ -9,6 +9,7 @@ Website:     https://wakatime.com/
 package com.wakatime.intellij.plugin;
 
 import com.intellij.AppTopics;
+import com.intellij.execution.ExecutionManager;
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.application.ApplicationInfo;
@@ -50,9 +51,13 @@ public class WakaTime implements ApplicationComponent {
     public static Boolean DEBUG = false;
     public static Boolean READY = false;
     public static String lastFile = null;
+    public static String lastLanguage = null;
+    public static String lastEntity = null;
     public static BigDecimal lastTime = new BigDecimal(0);
+    public static Boolean isBuilding = false;
 
     private final int queueTimeoutSeconds = 30;
+
     private static ConcurrentLinkedQueue<Heartbeat> heartbeatsQueue = new ConcurrentLinkedQueue<Heartbeat>();
     private static ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private static ScheduledFuture<?> scheduledFixture;
@@ -165,6 +170,7 @@ public class WakaTime implements ApplicationComponent {
                 MessageBus bus = ApplicationManager.getApplication().getMessageBus();
                 connection = bus.connect();
                 connection.subscribe(AppTopics.FILE_DOCUMENT_SYNC, new CustomSaveListener());
+                connection.subscribe(ExecutionManager.EXECUTION_TOPIC, new CustomExecutionListener());
 //                connection.subscribe(CompilerTopics.COMPILATION_STATUS, new CompilationStatusListener() {
 //                    @Override
 //                    public void compilationFinished(boolean aborted, int errors, int warnings, @NotNull CompileContext compileContext) {
@@ -258,6 +264,8 @@ public class WakaTime implements ApplicationComponent {
         WakaTime.lastFile = file.getPath();
         WakaTime.lastTime = time;
         final String language = WakaTime.getLanguage(file);
+        WakaTime.lastLanguage = language;
+        WakaTime.lastEntity = file.getPath();
         ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
             public void run() {
                 Heartbeat h = new Heartbeat();
@@ -266,6 +274,23 @@ public class WakaTime implements ApplicationComponent {
                 h.isWrite = isWrite;
                 h.project = projectName;
                 h.language = language;
+                heartbeatsQueue.add(h);
+            }
+        });
+    }
+
+    public static void appendExecHeartbeat(Project project, final boolean isWrite) {
+        final String projectName = project != null ? project.getName() : null;
+        final BigDecimal time = WakaTime.getCurrentTimestamp();
+        WakaTime.lastTime = time;
+        ApplicationManager.getApplication().executeOnPooledThread(new Runnable() {
+            public void run() {
+                Heartbeat h = new Heartbeat();
+                h.entity = lastEntity;
+                h.timestamp = time;
+                h.isWrite = isWrite;
+                h.project = projectName;
+                h.language = lastLanguage;
                 heartbeatsQueue.add(h);
             }
         });
@@ -430,8 +455,13 @@ public class WakaTime implements ApplicationComponent {
         }
         cmds.add("--plugin");
         cmds.add(IDE_NAME + "/" + IDE_VERSION + " " + IDE_NAME + "-wakatime/" + VERSION);
-        if (heartbeat.isWrite)
+        if (heartbeat.isWrite) {
             cmds.add("--write");
+        }
+        if (isBuilding) {
+            cmds.add("--category");
+            cmds.add("building");
+        }
         if (extraHeartbeats.size() > 0)
             cmds.add("--extra-heartbeats");
         return cmds.toArray(new String[cmds.size()]);
